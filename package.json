@@ -1,0 +1,26 @@
+{
+  "name": "claude-stealth",
+  "version": "3.0.0",
+  "description": "Undercover-mode wrapper for Claude Code",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "claude-stealth": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/cli.js"
+  },
+  "author": "Mateo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mateoltd/claude-stealth"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "picocolors": "^1.1.1"
+  }
+}

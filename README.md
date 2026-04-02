@@ -17,21 +17,14 @@ As a side effect of how undercover mode works, it also suppresses AI attribution
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/mateoltd/claude-stealth/main/claude-stealth -o claude-stealth && sh claude-stealth
+curl -fsSL https://raw.githubusercontent.com/mateoltd/claude-stealth/main/install.sh | sh
 ```
 
-That is it. On first run, `claude-stealth` detects that no config exists and walks you through everything:
+That's it. The script installs dependencies, then launches the setup wizard automatically. It detects your workspace, finds sensitive terms, and writes the config.
 
-1. Installs itself to `~/.local/bin`
-2. Aliases `claude` to `claude-stealth` in your shell rc
-3. Launches Claude Code to interactively ask what you need to keep confidential
-4. Writes the config and you are ready to go
+### Upgrading from v2
 
-Reload your shell after setup:
-
-```sh
-source ~/.bashrc  # or ~/.zshrc
-```
+Re-run the install script. Your existing config at `~/.config/claude-stealth/config` is automatically migrated to JSON format on first run.
 
 ## Usage
 
@@ -45,36 +38,43 @@ claude --resume                 # resume previous session
 
 All flags pass through to Claude Code.
 
-## Configuration
+## Setup wizard
 
-The config lives at `~/.config/claude-stealth/config`. You can edit it directly or re-run the setup wizard:
+The setup wizard runs on first use or anytime with `--setup`. It offers three modes:
+
+- **Auto-scan workspace**: scans your repos for git orgs, private npm scopes, internal domains, and author email domains. Presents findings as a checklist you can toggle.
+- **Manual setup**: type your terms directly.
+- **Skip**: use defaults now, configure later.
 
 ```sh
 claude-stealth --setup
 ```
 
-Available settings:
+## Configuration
 
-```sh
-# Terms that should NEVER appear in commits, PRs, or comments (comma-separated)
-STEALTH_NEVER_MENTION="ProjectPhoenix,internal-api,codename-x,acme-corp"
+Config lives at `~/.config/claude-stealth/config.json`:
 
-# Version string patterns to suppress (comma-separated, optional)
-STEALTH_VERSION_PATTERNS="v[0-9]+-internal,alpha-[0-9]+"
-
-# Auto-skip permission prompts (default: true)
-STEALTH_SKIP_PERMISSIONS="true"
+```json
+{
+  "terms": ["project-phoenix", "acme-corp", "internal.myco.io"],
+  "versionPatterns": ["v*-internal", "alpha-*"],
+  "skipPermissions": true
+}
 ```
+
+| Field | Description |
+|-------|-------------|
+| `terms` | Strings that must never appear in commits, PRs, or comments |
+| `versionPatterns` | Version string patterns to suppress |
+| `skipPermissions` | Pass `--dangerously-skip-permissions` to Claude Code |
 
 ## Commands
 
 | Flag | Description |
 |------|-------------|
-| *(none, first run)* | Full onboarding: install + interactive config |
-| `--setup`, `-s` | Re-run the configuration wizard |
-| `--install`, `-i` | Install only (skip interactive setup) |
-| `--update`, `-u` | Update script in place, preserving config |
-| `--uninstall` | Remove binary, config, and shell aliases completely |
+| *(first run)* | Setup wizard launches automatically |
+| `--setup`, `-s` | Re-run the setup wizard |
+| `--uninstall` | Remove config and shell aliases |
 | `--version`, `-v` | Show version |
 | `--help`, `-h` | Show help |
 
@@ -82,12 +82,10 @@ STEALTH_SKIP_PERMISSIONS="true"
 
 `claude-stealth` creates a temporary file containing a system prompt override and passes it to Claude Code via `--append-system-prompt-file`. The override instructs the model to never include configured confidential terms or AI attribution in any externally visible output. The temp file is cleaned up on exit.
 
-The interactive setup wizard works by launching Claude Code itself in a one-shot prompt to have a natural conversation about what you need to keep confidential, then writing the config file directly.
-
 ## Requirements
 
 - [Claude Code](https://claude.ai/code) installed and authenticated
-- Any POSIX-compatible shell (bash, zsh, dash, ksh)
+- Node.js 18+
 
 ## License
 
