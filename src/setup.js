@@ -208,28 +208,41 @@ async function runClaudeScan(claudePath) {
       }
     });
 
+    let terms = [];
+
     if (!config.terms.length) {
-      p.log.info('No sensitive terms detected.');
+      p.log.info('No sensitive terms detected in this workspace.');
     } else {
       p.log.success(
         `Found ${config.terms.length} term${config.terms.length === 1 ? '' : 's'}: ${pc.dim(config.terms.join(', '))}`,
       );
-    }
 
-    // Let user review found terms
-    let terms = config.terms;
-    if (terms.length) {
-      const selected = await p.multiselect({
-        message: 'Select terms to protect',
-        options: terms.map((t) => ({ value: t, label: t })),
-        initialValues: terms,
-        required: false,
+      const useFound = await p.confirm({
+        message: 'Protect these terms?',
+        initialValue: true,
       });
-      if (p.isCancel(selected)) {
+      if (p.isCancel(useFound)) {
         p.cancel('Cancelled.');
         return null;
       }
-      terms = selected;
+
+      if (useFound) {
+        if (config.terms.length > 1) {
+          const selected = await p.multiselect({
+            message: 'Select which terms to protect',
+            options: config.terms.map((t) => ({ value: t, label: t })),
+            initialValues: config.terms,
+            required: false,
+          });
+          if (p.isCancel(selected)) {
+            p.cancel('Cancelled.');
+            return null;
+          }
+          terms = selected;
+        } else {
+          terms = config.terms;
+        }
+      }
     }
 
     // Extra terms

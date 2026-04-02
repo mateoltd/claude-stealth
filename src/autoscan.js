@@ -80,31 +80,41 @@ function runClaude(claudePath, prompt, skipPerms = false) {
 
 function buildScanPrompt(hints) {
   const lines = [
-    'You are scanning this workspace to identify sensitive or private terms that should never appear in public commits, PR descriptions, or code comments.',
+    'You are scanning this workspace to find TRULY PRIVATE information that should be hidden from commits and PRs.',
     '',
-    'Thoroughly examine the workspace:',
-    '- Git remotes (extract organization/company names from GitHub/GitLab/Bitbucket URLs)',
-    '- package.json files (private npm scopes like @company/pkg, internal package names)',
-    '- .env and .env.* files (internal domains like *.internal, *.corp, *.local, API keys variable names that reveal org names)',
-    '- Git log (private email domains from commit authors)',
-    '- Directory structure and project names that reveal internal codenames',
-    '- README, CI configs, docker-compose, and other config files for internal references',
-    '- Any file that reveals company names, org names, internal project codenames, or private infrastructure',
+    'Look for:',
+    '- Internal domains (*.internal, *.corp, *.local, *.private, private VPN hostnames)',
+    '- Secret project codenames that are not publicly visible anywhere',
+    '- Private infrastructure names (internal service names, private API hostnames)',
+    '- Internal tool names, private Slack channels, or internal team names referenced in code',
+    '- Private npm scopes that are not published to the public registry',
+    '- Credentials, API keys, or tokens that reveal organization identity',
+    '',
+    'DO NOT flag any of the following — these are PUBLIC and not sensitive:',
+    '- GitHub/GitLab/Bitbucket usernames or organization names (publicly visible)',
+    '- Public repository names (visible on GitHub)',
+    '- Author names or emails from git log (publicly visible in commits)',
+    '- Emails ending in @users.noreply.github.com',
+    '- Open-source package names or well-known library names',
+    '- The name of the current project/repo itself',
+    '- Anything already publicly accessible on the internet',
     '',
     'DO NOT modify, create, or delete any files. Only read and analyze.',
+    '',
+    'If you find NOTHING truly private, that is a valid result — say so clearly.',
     '',
   ];
 
   if (hints) {
     lines.push(
-      'Here are some initial signals detected by a heuristic pre-scan. Use these as starting points but do your own thorough investigation:',
+      'A heuristic pre-scan flagged these, but many may be false positives. Evaluate each critically:',
       hints,
       '',
     );
   }
 
   lines.push(
-    'Write a detailed markdown report of your findings. For each term, explain briefly why it appears sensitive. Group findings by category (organizations, domains, project names, version patterns, etc).',
+    'Write a markdown report. For each term, explain why it is genuinely private (not just "found in git remote"). If nothing is truly private, say "No sensitive terms found."',
   );
 
   return lines.join('\n');
@@ -112,19 +122,19 @@ function buildScanPrompt(hints) {
 
 function buildApplyPrompt(findingsPath) {
   return [
-    `Read the file at ${findingsPath} which contains a workspace scan report identifying sensitive terms.`,
+    `Read the file at ${findingsPath} which contains a workspace scan report.`,
     '',
-    'Based on those findings, output ONLY a valid JSON object (no markdown fences, no explanation before or after) with this exact structure:',
+    'Based on those findings, output ONLY a valid JSON object (no markdown fences, no explanation) with this structure:',
     '',
     '{"terms":["term1","term2"],"versionPatterns":["pattern1"],"notes":[],"skipPermissions":true}',
     '',
-    'Field rules:',
-    '- "terms": array of sensitive strings found in the scan (org names, internal domains, project codenames, private identifiers). Each must be at least 2 characters.',
-    '- "versionPatterns": array of glob patterns for internal version formats found (e.g. "v*-internal"), or empty array if none found.',
-    '- "notes": always an empty array.',
-    '- "skipPermissions": always true.',
-    '- Only include genuinely private/sensitive terms. Skip generic words (main, dev, test, src, lib, build, dist, etc).',
-    '- Output ONLY the raw JSON object. No markdown, no explanation.',
+    'Rules:',
+    '- "terms": ONLY genuinely private/internal terms (internal domains, secret codenames, private infrastructure). Each must be 2+ characters.',
+    '- Do NOT include: public GitHub usernames, public repo names, author names/emails, noreply emails, open-source package names.',
+    '- If the report says nothing sensitive was found, output: {"terms":[],"versionPatterns":[],"notes":[],"skipPermissions":true}',
+    '- "versionPatterns": internal version glob patterns, or empty array.',
+    '- "notes": always empty array. "skipPermissions": always true.',
+    '- Output ONLY the raw JSON. No markdown, no explanation.',
   ].join('\n');
 }
 
