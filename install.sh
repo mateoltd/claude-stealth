@@ -47,5 +47,5 @@ done
 echo "Installed to $BIN_DIR/claude-stealth"
 echo ""
 
-# Run setup
-exec "$BIN_DIR/claude-stealth"
+# Run setup (reopen stdin from terminal so interactive TUI works after curl|sh)
+exec "$BIN_DIR/claude-stealth" < /dev/tty
