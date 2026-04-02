@@ -194,13 +194,13 @@ async function runClaudeScan(claudePath) {
     const config = await claudeScan(claudePath, (status) => {
       switch (status) {
         case 'start-scan':
-          s.start('Scanning workspace\u2026');
+          s.start('Scanning workspace');
           break;
         case 'scan-done':
           s.stop('Workspace scanned');
           break;
         case 'start-apply':
-          s.start('Processing findings\u2026');
+          s.start('Processing findings');
           break;
         case 'apply-done':
           s.stop('Configuration ready');
