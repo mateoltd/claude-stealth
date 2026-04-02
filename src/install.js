@@ -10,6 +10,9 @@ import { homedir } from 'node:os';
 import { execSync } from 'node:child_process';
 import { getConfigDir } from './config.js';
 
+const INSTALL_DIR = join(homedir(), '.local', 'share', 'claude-stealth');
+const BIN_PATH = join(homedir(), '.local', 'bin', 'claude-stealth');
+
 export function findClaude() {
   const cmd =
     process.platform === 'win32'
@@ -83,15 +86,20 @@ function installAliasWindows() {
 export function removeAlias() {
   if (process.platform === 'win32') return;
   const home = homedir();
+  const patterns = [
+    // From install.js
+    /\n?# claude-stealth\nalias claude='claude-stealth'\n?/g,
+    // From install.sh (includes PATH export)
+    /\n?# claude-stealth\nexport PATH="\$HOME\/\.local\/bin:\$PATH"\nalias claude='claude-stealth'\n?/g,
+  ];
   for (const f of ['.bashrc', '.zshrc', '.bash_profile', '.profile']) {
     const rc = join(home, f);
     if (!existsSync(rc)) continue;
-    const content = readFileSync(rc, 'utf8');
-    const cleaned = content.replace(
-      /\n?# claude-stealth\nalias claude='claude-stealth'\n?/g,
-      '',
-    );
-    if (cleaned !== content) writeFileSync(rc, cleaned);
+    let content = readFileSync(rc, 'utf8');
+    for (const pat of patterns) {
+      content = content.replace(pat, '');
+    }
+    writeFileSync(rc, content);
   }
 }
 
@@ -101,23 +109,52 @@ export async function uninstall() {
 
   p.intro(pc.bgRed(pc.white(pc.bold(' claude-stealth uninstall '))));
 
+  const configDir = getConfigDir();
+  const items = [];
+  if (existsSync(configDir)) items.push(`Configuration at ${pc.dim(configDir)}`);
+  if (existsSync(INSTALL_DIR)) items.push(`Program files at ${pc.dim(INSTALL_DIR)}`);
+  if (existsSync(BIN_PATH)) items.push(`Binary at ${pc.dim(BIN_PATH)}`);
+  items.push('Shell aliases from rc files');
+
+  p.note(items.join('\n'), 'The following will be removed');
+
   const ok = await p.confirm({
-    message: 'Remove claude-stealth and all configuration?',
+    message: 'Proceed with uninstall?',
   });
   if (!ok || p.isCancel(ok)) {
     p.cancel('Cancelled.');
     return;
   }
 
+  // Remove shell aliases
   removeAlias();
   p.log.success('Shell aliases removed.');
 
-  const configDir = getConfigDir();
+  // Remove configuration
   if (existsSync(configDir)) {
     rmSync(configDir, { recursive: true, force: true });
     p.log.success('Configuration removed.');
   }
 
-  p.note('rm -rf ~/.local/share/claude-stealth ~/.local/bin/claude-stealth', 'To complete removal');
-  p.outro('Done.');
+  // Remove binary
+  if (existsSync(BIN_PATH)) {
+    try {
+      rmSync(BIN_PATH);
+      p.log.success('Binary removed.');
+    } catch {
+      p.log.warn(`Could not remove ${BIN_PATH} \u2014 remove it manually.`);
+    }
+  }
+
+  // Remove install directory
+  if (existsSync(INSTALL_DIR)) {
+    try {
+      rmSync(INSTALL_DIR, { recursive: true, force: true });
+      p.log.success('Program files removed.');
+    } catch {
+      p.log.warn(`Could not remove ${INSTALL_DIR} \u2014 remove it manually.`);
+    }
+  }
+
+  p.outro('Uninstall complete. Reload your shell to remove the alias.');
 }
