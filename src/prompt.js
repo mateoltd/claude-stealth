@@ -34,6 +34,13 @@ export function buildPrompt(config) {
     }
   }
 
+  if (config.notes?.length) {
+    lines.push('', '## ADDITIONAL INSTRUCTIONS', '');
+    for (const note of config.notes) {
+      lines.push(note);
+    }
+  }
+
   lines.push(
     '',
     'GOOD commit messages:',

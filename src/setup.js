@@ -71,6 +71,9 @@ export async function runSetup({ firstRun = false } = {}) {
   });
   if (p.isCancel(patterns)) return void p.cancel('Cancelled.');
 
+  const notes = await collectNotes();
+  if (notes === null) return;
+
   const skipPerms = await p.confirm({
     message: 'Auto-approve Claude Code permission prompts?',
     initialValue: true,
@@ -82,6 +85,7 @@ export async function runSetup({ firstRun = false } = {}) {
     versionPatterns: patterns?.trim()
       ? patterns.split(',').map((t) => t.trim()).filter(Boolean)
       : [],
+    notes,
     skipPermissions: skipPerms,
   };
   saveConfig(config);
@@ -103,6 +107,7 @@ export async function runSetup({ firstRun = false } = {}) {
     [
       `${pc.bold('Terms:')}        ${config.terms.length ? config.terms.join(', ') : pc.dim('none')}`,
       `${pc.bold('Patterns:')}     ${config.versionPatterns.length ? config.versionPatterns.join(', ') : pc.dim('none')}`,
+      `${pc.bold('Notes:')}        ${config.notes.length ? config.notes.length + ' instruction' + (config.notes.length === 1 ? '' : 's') : pc.dim('none')}`,
       `${pc.bold('Auto-approve:')} ${config.skipPermissions ? 'yes' : 'no'}`,
       `${pc.bold('Config:')}       ${pc.dim(getConfigPath())}`,
     ].join('\n'),
@@ -174,4 +179,37 @@ async function runScan() {
     terms.push(...extra.split(',').map((t) => t.trim()).filter(Boolean));
 
   return terms;
+}
+
+async function collectNotes() {
+  const notes = [];
+
+  const wantsNotes = await p.confirm({
+    message: 'Add custom instructions for Claude?',
+    initialValue: false,
+  });
+  if (p.isCancel(wantsNotes)) {
+    p.cancel('Cancelled.');
+    return null;
+  }
+  if (!wantsNotes) return notes;
+
+  while (true) {
+    const note = await p.text({
+      message: notes.length
+        ? 'Another instruction (or press enter to finish)'
+        : 'Instruction for Claude',
+      placeholder: "e.g. Don't reference anything related to bananas",
+      defaultValue: '',
+    });
+    if (p.isCancel(note)) {
+      p.cancel('Cancelled.');
+      return null;
+    }
+    if (!note?.trim()) break;
+    notes.push(note.trim());
+    p.log.success(`Added: ${pc.dim(note.trim())}`);
+  }
+
+  return notes;
 }

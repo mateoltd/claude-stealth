@@ -18,7 +18,7 @@ export function getConfigPath() {
 }
 
 export function defaultConfig() {
-  return { terms: [], versionPatterns: [], skipPermissions: true };
+  return { terms: [], versionPatterns: [], notes: [], skipPermissions: true };
 }
 
 export function loadConfig() {

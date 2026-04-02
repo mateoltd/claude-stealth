@@ -58,6 +58,10 @@ Config lives at `~/.config/claude-stealth/config.json`:
 {
   "terms": ["project-phoenix", "acme-corp", "internal.myco.io"],
   "versionPatterns": ["v*-internal", "alpha-*"],
+  "notes": [
+    "Don't reference anything related to bananas",
+    "Always use American English spelling"
+  ],
   "skipPermissions": true
 }
 ```
@@ -66,6 +70,7 @@ Config lives at `~/.config/claude-stealth/config.json`:
 |-------|-------------|
 | `terms` | Strings that must never appear in commits, PRs, or comments |
 | `versionPatterns` | Version string patterns to suppress |
+| `notes` | Freeform instructions appended to Claude's system prompt |
 | `skipPermissions` | Pass `--dangerously-skip-permissions` to Claude Code |
 
 ## Commands
