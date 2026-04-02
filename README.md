@@ -4,7 +4,7 @@ Undercover-mode wrapper for [Claude Code](https://claude.ai/code). Prevents conf
 
 ## Background
 
-Claude Code has an internal feature called **undercover mode**, found in the [source code that was exposed via sourcemaps](https://github.com/anthropics/claude-code) on March 31, 2026. Anthropic uses it internally to prevent their engineers from accidentally leaking internal model codenames, project names, and other sensitive details when contributing to public repositories with Claude Code.
+Claude Code has an internal feature called **undercover mode**, found in the [source code that was exposed via sourcemaps](https://x.com/Fried_rice/status/2038894956459290963) on March 31, 2026. Anthropic uses it internally to prevent their engineers from accidentally leaking internal model codenames, project names, and other sensitive details when contributing to public repositories with Claude Code.
 
 `claude-stealth` brings that same concept to everyone. It injects a system prompt override that acts as a firewall between your internal knowledge and your public-facing git history.
 
